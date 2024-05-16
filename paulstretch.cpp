@@ -6,7 +6,6 @@
 #include "ProcessedStretch.h"
 
 #include "Input/MP3InputS.h"
-// #include "Output/VorbisOutputS.h"
 
 struct {
     int bufsize;
@@ -14,51 +13,20 @@ struct {
     double onset_detection_sensitivity;
 }process;
 
-// struct {
-//     float render_percent;
-//     bool cancel_render;
-// }info;
-
 ProcessParameters ppar;
 BinauralBeatsParameters	bbpar;
 FFTWindow window_type;
 bool wav32bit;
-// float volume;
-// const int samplerate = 480000;
-// FILE_TYPE outtype    = FILE_WAV;
 
 using namespace std;
 
-string Render(string inaudio,string outaudio,FILE_TYPE outtype,FILE_TYPE intype) {
-// },float pos1,float pos2){
-	// if (pos2<pos1){
-	// 	float tmp=pos2;
-	// 	pos2=pos1;
-	// 	pos1=tmp;
-	// };
-	// InputS *ai=NULL;
-	// switch(intype){
-// 		case FILE_VORBIS:ai=new VorbisInputS;
-// 						 break;
-		// case FILE_MP3:ai=new MP3InputS;
-					  // break;
-// 		default:ai=new AInputS;
-	// };
-
+string Render(string inaudio,string outaudio) {
 	InputS *ai = new MP3InputS;
-
-// 	AOutputS ao;
-// 	VorbisOutputS vorbisout;
-	// info.cancel_render=false;
 	if (!ai->open(inaudio)){
 		return "Error: Could not open audio file (or file format not recognized) :"+inaudio;
 	};
 	BinauralBeats bb(ai->info.samplerate);
 	bb.pars=bbpar;
-// 	if (outtype==FILE_WAV) ao.newfile(outaudio,ai->info.samplerate,wav32bit);
-// 	if (outtype==FILE_VORBIS) vorbisout.newfile(outaudio,ai->info.samplerate);
-
-	// ai->seek(pos1);
 
 	int inbufsize=process.bufsize;
 
@@ -118,45 +86,26 @@ string Render(string inaudio,string outaudio,FILE_TYPE outtype,FILE_TYPE intype)
 		stretchl->here_is_onset(onset);
 		stretchr->here_is_onset(onset);
 		bb.process(stretchl->out_buf,stretchr->out_buf,outbufsize,in_pos*100.0);
-		// for (int i=0;i<outbufsize;i++) {
-		// 	stretchl->out_buf[i]*=volume;
-		// 	stretchr->out_buf[i]*=volume;
-		// };
+
 		int nskip=stretchl->get_skip_nsamples();
 		if (nskip>0) ai->skip(nskip);
+		cout << "nskip(" << nskip << ") " << flush;
+		cout << "outbufsize(" << outbufsize << ") " << flush;
+		cout << "in_pos(" << in_pos << ") " << flush;
 
-		// if (outtype==FILE_WAV){
-			for (int i=0;i<outbufsize;i++) {
-				float l=stretchl->out_buf[i];
-				float r=stretchr->out_buf[i];
-				if (l<-1.0) l=-1.0;
-				else if (l>1.0) l=1.0;
-				if (r<-1.0) r=-1.0;
-				else if (r>1.0) r=1.0;
-				outbuf[i*2]=(int)(l*32767.0*65536.0);
-				outbuf[i*2+1]=(int)(r*32767.0*65536.0);
-			};
-			cout << "." << flush;
-// 			ao.write(outbufsize,outbuf);
-            outfile.write(reinterpret_cast<char*>(outbuf), outbufsize * sizeof(int) * 2);
-		// };
-// 		if (outtype==FILE_VORBIS) vorbisout.write(outbufsize,stretchl->out_buf,stretchr->out_buf);
-
-		// float totalf=ai->info.currentsample/(float)ai->info.nsamples-pos1;
-		// if (totalf>(pos2-pos1)) break;
-
-		// info.render_percent=(totalf*100.0/(pos2-pos1+0.001));
-		// cout << "(" << info.render_percent << ")" << endl;
-// 		cout << "> " << (int)(info.render_percent*10000) << endl;
-// 		pause_write+=outbufsize;
-// 		if (pause_write>pause_max_write){
-// 			float tmp=outbufsize/1000000.0;
-// 			if (tmp>0.1) tmp=0.1;
-// // 			Fl::wait(0.01+tmp);
-// 			pause_write=0;
-// 			if (info.cancel_render) break;
-// 		};
-	};
+		for (int i=0;i<outbufsize;i++) {
+			float l=stretchl->out_buf[i];
+			float r=stretchr->out_buf[i];
+			if (l<-1.0) l=-1.0;
+			else if (l>1.0) l=1.0;
+			if (r<-1.0) r=-1.0;
+			else if (r>1.0) r=1.0;
+			outbuf[i*2]=(int)(l*32767.0*65536.0);
+			outbuf[i*2+1]=(int)(r*32767.0*65536.0);
+		};
+		cout << "<end of frame>" << endl;
+        outfile.write(reinterpret_cast<char*>(outbuf), outbufsize * sizeof(int) * 2);
+	}
     outfile.close();
 
 	delete stretchl;
@@ -166,26 +115,18 @@ string Render(string inaudio,string outaudio,FILE_TYPE outtype,FILE_TYPE intype)
 	delete []inbuf.l;
 	delete []inbuf.r;
 
-	// info.render_percent=-1.0;
-	return "";
-};
+	return "OK";
+}
 
 int main(int argc, char **argv) {
-// 	wavinfo.samplerate=44100;
-// 	wavinfo.nsamples=0;
-// 	wavinfo.intype=FILE_WAV;
 	wav32bit=false;
 
 	process.bufsize=16384;// / 32;
 	process.stretch=8.0;
 	process.onset_detection_sensitivity=0.0;
 
-// 	seek_pos=0.0;
 	window_type=W_HANN;
-	// info.render_percent=-1.0;
-	// info.cancel_render=false;
-	// volume=1.0;
 
 	cout << "+++ paulstretch" << endl << endl;
-    cout << Render("../test/input.mp3", "../test/output.raw", FILE_WAV, FILE_MP3) << endl;
+    cout << Render("../test/input.mp3", "../test/output.raw") << endl;
 }
