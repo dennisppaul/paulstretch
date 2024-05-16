@@ -82,14 +82,18 @@ string Render(string inaudio,string outaudio) {
         };
         float onset_l=stretchl->process(inbuf.l,readed);
         float onset_r=stretchr->process(inbuf.r,readed);
-        float onset=(onset_l>onset_r)?onset_l:onset_r;
-        stretchl->here_is_onset(onset);
-        stretchr->here_is_onset(onset);
-        bb.process(stretchl->out_buf,stretchr->out_buf,outbufsize,in_pos*100.0);
 
-        int nskip=stretchl->get_skip_nsamples();
-        if (nskip>0) ai->skip(nskip);
-        cout << "nskip(" << nskip << ") " << flush;
+        #ifdef USE_EXTRAS
+            float onset=(onset_l>onset_r)?onset_l:onset_r;
+            stretchl->here_is_onset(onset);
+            stretchr->here_is_onset(onset);
+            bb.process(stretchl->out_buf,stretchr->out_buf,outbufsize,in_pos*100.0);
+
+            int nskip=stretchl->get_skip_nsamples();
+            if (nskip>0) ai->skip(nskip);
+            cout << "nskip(" << nskip << ") " << flush;
+        #endif
+
         cout << "outbufsize(" << outbufsize << ") " << flush;
         cout << "in_pos(" << in_pos << ") " << flush;
 
@@ -121,12 +125,16 @@ string Render(string inaudio,string outaudio) {
 int main(int argc, char **argv) {
     wav32bit=false;
 
-    process.bufsize=16384;// / 32;
-    process.stretch=8.0;
-    process.onset_detection_sensitivity=0.0;
+    process.bufsize = 44100 * 0.125; // 0.125 seconds
+    process.stretch = 8.0;
+    process.onset_detection_sensitivity = 0.0;
 
     window_type=W_HANN;
 
     cout << "+++ paulstretch" << endl << endl;
-    cout << Render("../test/input.mp3", "../test/output.raw") << endl;
+    if (argc == 3) {
+        cout << argc << endl;
+        cout << argv[0] << endl;
+        cout << Render(argv[1], argv[2]) << endl;
+    }
 }

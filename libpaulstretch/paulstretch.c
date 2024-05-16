@@ -16,6 +16,8 @@ struct fft {
   size_t rand;
   size_t length;
   #ifdef KISSFFT
+		float *smp;//size of samples/2
+		float *freq;//size of samples
 		kiss_fftr_cfg plankfft;
 	    kiss_fftr_cfg plankifft;
 		kiss_fft_scalar *datar;
@@ -34,11 +36,13 @@ static void fft_init(struct fft *fft, size_t length) {
   fft->rand = rand_seed;
   fft->length = length;
   #ifdef KISSFFT
-	fft->datar=new kiss_fft_scalar[length+2];
+ 	fft->smp = (float*)malloc(length * sizeof(float));;for (int i=0;i<length;i++) fft->smp[i]=0.0;
+ 	fft->freq = (float*)malloc((length/2+1) * sizeof(float));;for (int i=0;i<length/2+1;i++) fft->freq[i]=0.0;
+	fft->datar = (kiss_fft_scalar*)malloc((length + 2) * sizeof(kiss_fft_scalar));
 	for (int i=0;i<length+2;i++) {
 	    fft->datar[i]=0.0;
 	}
-	fft->datac=new kiss_fft_cpx[length/2+2];
+	fft->datac = (kiss_fft_cpx*)malloc((length / 2 + 2) * sizeof(kiss_fft_cpx));
 	for (int i=0;i<length/2+2;i++) {
 	    fft->datac[i].r=0.0;
         fft->datac[i].i=0.0;
@@ -52,24 +56,46 @@ static void fft_init(struct fft *fft, size_t length) {
   #endif
   fft->window_data = malloc(length * sizeof(float));
   for (size_t i = 0; i < length; ++i) {
-    fft->window_data[i] = 0.53836 - 0.46164 * cos(2 * PI * i / (length + 1.0));
+    fft->window_data[i] = 0.53836 - 0.46164 * cos(2 * PI * i / (length + 1.0)); // W_HAMMING
   }
 }
 
 static void fft_apply_window(struct fft *fft) {
   for (size_t i = 0; i < fft->length; ++i) {
-    fft->data[i] *= fft->window_data[i];
+      #ifdef KISSFFT
+        for (int i = 0; i<fft->length; i++) {
+            fft->smp[i] *= fft->window_data[i];
+        }
+      #else
+        fft->data[i] *= fft->window_data[i];
+      #endif
   }
 }
 
 static void fft_s2f(struct fft *fft) {
-  fftwf_execute(fft->plan);
-  for (size_t i = 1; i < fft->length / 2; ++i) {
-    float c = fft->data[i];
-    float s = fft->data[fft->length - i];
-    fft->data[i] = sqrt(c * c + s * s);
-  }
-  fft->data[0] = 0.0f;
+#ifdef KISSFFT
+	for (int i = 0; i < fft->length; i++) {
+	   fft->datar[i] = fft->smp[i];
+	}
+	kiss_fftr(fft->plankfft, fft->datar, fft->datac);
+#else
+    fftwf_execute(fft->plan);
+#endif
+    #ifdef KISSFFT
+        for (size_t i = 1; i < fft->length / 2; ++i) {
+            float c = fft->datac[i].r;
+            float s = fft->datac[i].i;
+            fft->freq[i] = sqrt(c * c + s * s);
+        }
+        fft->freq[0] = 0.0f;
+    #else
+        for (size_t i = 1; i < fft->length / 2; ++i) {
+            float c = fft->data[i];
+            float s = fft->data[fft->length - i];
+            fft->data[i] = sqrt(c * c + s * s);
+        }
+        fft->data[0] = 0.0f;
+    #endif
 }
 
 static void fft_f2s(struct fft *fft) {
@@ -78,23 +104,45 @@ static void fft_f2s(struct fft *fft) {
     fft->rand = fft->rand * 1103515245 + 12345;
     size_t rd = fft->rand & 0x7fff;
     float phase = rd * inv_2p15_2pi;
-    float data = fft->data[i];
-    fft->data[i] = data * cos(phase);
-    fft->data[fft->length - i] = data * sin(phase);
+    #ifdef KISSFFT
+		fft->datac[i].r = fft->freq[i] * cos(phase);
+		fft->datac[i].i = fft->freq[i] * sin(phase);
+    #else
+        float data = fft->data[i];
+        fft->data[i] = data * cos(phase);
+        fft->data[fft->length - i] = data * sin(phase);
+    #endif
   }
-  fft->data[0] = 0.0;
-  fft->data[fft->length / 2] = 0.0;
+  #ifdef KISSFFT
+	fft->datac[0].r = fft->datac[0].i = 0.0;
+	kiss_fftri(fft->plankifft, fft->datac, fft->datar);
+	for (int i = 0; i < fft->length; i++) {
+	   fft->smp[i]= fft->datar[i] / fft->length;
+	}
+  #else
+    fft->data[0] = 0.0;
+    fft->data[fft->length / 2] = 0.0;
 
-  fftwf_execute(fft->plani);
-  for (size_t i = 0; i < fft->length; ++i) {
-    fft->data[i] = fft->data[i] / fft->length;
-  }
+    fftwf_execute(fft->plani);
+    for (size_t i = 0; i < fft->length; ++i) {
+        fft->data[i] = fft->data[i] / fft->length;
+    }
+  #endif
 }
 
 static void fft_finish(struct fft *fft) {
+#ifdef KISSFFT
+    free(fft->smp);
+    free(fft->freq);
+    free(fft->datar);
+	free(fft->datac);
+	free(fft->plankfft);
+	free(fft->plankifft);
+#else
   fftwf_free(fft->data);
   fftwf_destroy_plan(fft->plan);
   fftwf_destroy_plan(fft->plani);
+#endif
   free(fft->window_data);
 }
 
@@ -130,7 +178,11 @@ static void process(paulstretch ps, float *samples, size_t length) {
   if(start_pos >= ps->window_size) {
     start_pos = ps->window_size - 1;
   }
-  memcpy(ps->fft.data, &ps->in_buf[start_pos], ps->window_size * 2 * sizeof(float));
+  #ifdef KISSFFT
+    memcpy(ps->fft.smp, &ps->in_buf[start_pos], ps->window_size * 2 * sizeof(float));
+  #else
+    memcpy(ps->fft.data, &ps->in_buf[start_pos], ps->window_size * 2 * sizeof(float));
+  #endif
 
   fft_apply_window(&ps->fft);
   fft_s2f(&ps->fft);
@@ -142,7 +194,11 @@ static void process(paulstretch ps, float *samples, size_t length) {
 
   for (size_t i = 0; i < ps->window_size; ++i) {
     float lerp_factor = 0.5 + 0.5 * cos(i * frequency);
+    #ifdef KISSFFT
+    float lerped = ps->fft.smp[i + ps->window_size] * (1.0 - lerp_factor) + ps->old_out_samples[i] * lerp_factor;
+    #else
     float lerped = ps->fft.data[i + ps->window_size] * (1.0 - lerp_factor) + ps->old_out_samples[i] * lerp_factor;
+    #endif
     float val = lerped * (hinv_sqrt2 - (1.0 - hinv_sqrt2) * cos(i * 2.0 * frequency)) * amplification;
     if(val >= 1) {
       val = 1;
@@ -152,7 +208,11 @@ static void process(paulstretch ps, float *samples, size_t length) {
     ps->out_buf[i] = val;
   }
 
+  #ifdef KISSFFT
+  memcpy(ps->old_out_samples, ps->fft.smp, ps->window_size * sizeof(float));
+  #else
   memcpy(ps->old_out_samples, ps->fft.data, ps->window_size * sizeof(float));
+  #endif
 
   ps->remaining_samples += 1.0 / ps->amount;
   if (ps->remaining_samples >= 1.0) {
