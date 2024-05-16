@@ -44,8 +44,9 @@ class FFT{//FFT class that considers phases as random
 		kiss_fft_scalar *datar;
 		kiss_fft_cpx *datac;
 #else
-		fftwf_plan planfftw,planifftw;
-		float *data;
+        float *data;
+		fftwf_plan plan;
+		fftwf_plan plani;
 #endif
 		struct{
 			float *data;

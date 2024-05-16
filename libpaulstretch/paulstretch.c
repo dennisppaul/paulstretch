@@ -1,5 +1,9 @@
 #include <assert.h>
+#ifdef KISSFFT
+#include <kiss_fftr.h>
+#else
 #include <fftw3.h>
+#endif
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,9 +15,16 @@
 struct fft {
   size_t rand;
   size_t length;
-  float *data;
-  fftwf_plan plan;
-  fftwf_plan plani;
+  #ifdef KISSFFT
+		kiss_fftr_cfg plankfft;
+	    kiss_fftr_cfg plankifft;
+		kiss_fft_scalar *datar;
+		kiss_fft_cpx *datac;
+  #else
+        float *data;
+        fftwf_plan plan;
+        fftwf_plan plani;
+  #endif
   float *window_data;
 };
 
@@ -22,9 +33,23 @@ static void fft_init(struct fft *fft, size_t length) {
   rand_seed += 161103;
   fft->rand = rand_seed;
   fft->length = length;
-  fft->data = fftwf_alloc_real(length);
-  fft->plan = fftwf_plan_r2r_1d(length, fft->data, fft->data, FFTW_R2HC, FFTW_ESTIMATE);
-  fft->plani = fftwf_plan_r2r_1d(length, fft->data, fft->data, FFTW_HC2R, FFTW_ESTIMATE);
+  #ifdef KISSFFT
+	fft->datar=new kiss_fft_scalar[length+2];
+	for (int i=0;i<length+2;i++) {
+	    fft->datar[i]=0.0;
+	}
+	fft->datac=new kiss_fft_cpx[length/2+2];
+	for (int i=0;i<length/2+2;i++) {
+	    fft->datac[i].r=0.0;
+        fft->datac[i].i=0.0;
+	}
+	fft->plankfft = kiss_fftr_alloc(length,0,0,0);
+	fft->plankifft = kiss_fftr_alloc(length,1,0,0);
+  #else
+    fft->data = fftwf_alloc_real(length);
+    fft->plan = fftwf_plan_r2r_1d(length, fft->data, fft->data, FFTW_R2HC, FFTW_ESTIMATE);
+    fft->plani = fftwf_plan_r2r_1d(length, fft->data, fft->data, FFTW_HC2R, FFTW_ESTIMATE);
+  #endif
   fft->window_data = malloc(length * sizeof(float));
   for (size_t i = 0; i < length; ++i) {
     fft->window_data[i] = 0.53836 - 0.46164 * cos(2 * PI * i / (length + 1.0));

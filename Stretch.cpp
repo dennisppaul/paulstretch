@@ -42,8 +42,8 @@ FFT::FFT(int nsamples_){
 	plankifft = kiss_fftr_alloc(nsamples,1,0,0);
 #else
 	data=new float[nsamples];for (int i=0;i<nsamples;i++) data[i]=0.0;
-	planfftw=fftwf_plan_r2r_1d(nsamples,data,data,FFTW_R2HC,FFTW_ESTIMATE);
-	planifftw=fftwf_plan_r2r_1d(nsamples,data,data,FFTW_HC2R,FFTW_ESTIMATE);
+	plan=fftwf_plan_r2r_1d(nsamples,data,data,FFTW_R2HC,FFTW_ESTIMATE);
+	plani=fftwf_plan_r2r_1d(nsamples,data,data,FFTW_HC2R,FFTW_ESTIMATE);
 #endif
 	rand_seed=start_rand_seed;
 	start_rand_seed+=161103;
@@ -60,8 +60,8 @@ FFT::~FFT(){
 	free(plankifft);
 #else
 	delete []data;
-	fftwf_destroy_plan(planfftw);
-	fftwf_destroy_plan(planifftw);
+	fftwf_destroy_plan(plan);
+	fftwf_destroy_plan(plani);
 #endif
 };
 
@@ -71,7 +71,7 @@ void FFT::smp2freq(){
 	kiss_fftr(plankfft,datar,datac);
 #else
 	for (int i=0;i<nsamples;i++) data[i]=smp[i];
-	fftwf_execute(planfftw);
+	fftwf_execute(plan);
 #endif
 
 	for (int i=1;i<nsamples/2;i++) {
@@ -108,7 +108,7 @@ void FFT::freq2smp(){
 	for (int i=0;i<nsamples;i++) smp[i]=datar[i]/nsamples;
 #else
 	data[0]=data[nsamples/2+1]=data[nsamples/2]=0.0;
-	fftwf_execute(planifftw);
+	fftwf_execute(plani);
 	for (int i=0;i<nsamples;i++) smp[i]=data[i]/nsamples;
 #endif
 };
