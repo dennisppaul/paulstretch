@@ -3,7 +3,7 @@
   Author: Nasca Octavian Paul
 
   This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License 
+  it under the terms of version 2 of the GNU General Public License
   as published by the Free Software Foundation.
 
   This program is distributed in the hope that it will be useful,
@@ -23,7 +23,6 @@
 #include <stdio.h>
 
 #include "globals.h"
-#include "XMLwrapper.h"
 
 #define LOG_2 0.693147181
 #define LOG_10 2.302585093
@@ -32,7 +31,7 @@
 #define rap2dB(rap) ((20*log(rap)/LOG_10))
 
 struct FreeEditPos{
-	REALTYPE x,y;
+	float x,y;
 	bool enabled;
 };
 enum FREE_EDIT_EXTREME_SCALE{
@@ -41,11 +40,11 @@ enum FREE_EDIT_EXTREME_SCALE{
 	FE_DB=2
 };
 class FreeEditExtremes{
-	public:			
+	public:
 		FreeEditExtremes(){
 			init();
 		};
-		void init(REALTYPE min_=0.0,REALTYPE max_=1.0,FREE_EDIT_EXTREME_SCALE scale_=FE_LINEAR,bool lock_min_max_=false,bool lock_scale_=false){
+		void init(float min_=0.0,float max_=1.0,FREE_EDIT_EXTREME_SCALE scale_=FE_LINEAR,bool lock_min_max_=false,bool lock_scale_=false){
 			min=min_;
 			max=max_;
 			scale=scale_;
@@ -55,8 +54,8 @@ class FreeEditExtremes{
 		};
 
 		//converting functions
-		inline REALTYPE coord_to_real_value(REALTYPE coord){//coord = 0.0 .. 1.0
-			REALTYPE result;
+		inline float coord_to_real_value(float coord){//coord = 0.0 .. 1.0
+			float result;
 			switch(scale){
 				case FE_LOG://log
 					result=exp(log(min)+coord*(log(max)-log(min)));
@@ -67,18 +66,18 @@ class FreeEditExtremes{
 			};
 		};
 
-		inline REALTYPE real_value_to_coord(REALTYPE val){//coord = 0.0 .. 1.0
+		inline float real_value_to_coord(float val){//coord = 0.0 .. 1.0
 			switch(scale){
 				case FE_LOG://log
 					{
-						REALTYPE coord=log(val/min)/log(max/min);
+						float coord=log(val/min)/log(max/min);
 						clamp1(coord);
 						return coord;
 					};
 				default://linear
 					{
-						REALTYPE diff=max-min;
-						REALTYPE coord;
+						float diff=max-min;
+						float coord;
 						if (fabs(diff)>0.0001) coord=(val-min)/diff;
 						else coord=min;
 						clamp1(coord);
@@ -88,20 +87,20 @@ class FreeEditExtremes{
 		};
 
 		//max and min functions
-		void set_min(REALTYPE val){
+		void set_min(float val){
 			if (lock_min_max) return;
 			min=val;
 			correct_values();
 		};
-		REALTYPE get_min(){
+		float get_min(){
 			return min;
 		};
-		void set_max(REALTYPE val){
+		void set_max(float val){
 			if (lock_min_max) return;
 			max=val;
 			correct_values();
 		};
-		REALTYPE get_max(){
+		float get_max(){
 			return max;
 		};
 		//scale functions
@@ -112,32 +111,24 @@ class FreeEditExtremes{
 			if (lock_scale) return;
 			scale=val;
 		};
-		void add2XML(XMLwrapper *xml){
-			xml->addparreal("min",min);
-			xml->addparreal("max",max);
-		};
-		void getfromXML(XMLwrapper *xml){
-			set_min(xml->getparreal("min",min));
-			set_max(xml->getparreal("max",max));
-		};
-		
+
 	private:
-		inline REALTYPE clamp1(REALTYPE m){
+		inline float clamp1(float m){
 			if (m<0.0) return 0.0;
 			if (m>1.0) return 1.0;
 			return m;
-		};	
+		};
 		void correct_values(){
 			if (scale!=FE_LOG) return;
 			if (min<1e-8) min=1e-8;
 			if (max<1e-8) max=1e-8;
 		};
 		bool lock_min_max,lock_scale;
-		REALTYPE min,max;
+		float min,max;
 		FREE_EDIT_EXTREME_SCALE scale;
 };
 class FreeEdit{
-	public:		
+	public:
 		enum INTERP_MODE{
 			LINEAR=0,
 			COSINE=1
@@ -147,14 +138,11 @@ class FreeEdit{
 		const FreeEdit &operator=(const FreeEdit &other);
 		void deep_copy_from(const FreeEdit &other);
 
-		void add2XML(XMLwrapper *xml);
-		void getfromXML(XMLwrapper *xml);
-
 		//Enabled functions
 		bool get_enabled(){
 			return enabled;
 		};
-		void set_enabled(bool val){			
+		void set_enabled(bool val){
 			enabled=val;
 		};
 
@@ -173,24 +161,24 @@ class FreeEdit{
 		};
 
 
-		inline REALTYPE get_posx(int n){
+		inline float get_posx(int n){
 			if ((n<0)||(n>=npos)) return 0.0;
 			return pos[n].x;
 		};
-		inline REALTYPE get_posy(int n){
+		inline float get_posy(int n){
 			if ((n<0)||(n>=npos)) return 0.0;
 			return pos[n].y;
 		};
-		inline void set_posx(int n,REALTYPE x){
+		inline void set_posx(int n,float x){
 			if ((n<2)||(n>=npos)) return;//don't allow to set the x position of the first two positions
 			pos[n].x=clamp1(x);
 		};
-		inline void set_posy(int n,REALTYPE y){
+		inline void set_posy(int n,float y){
 			if ((n<0)||(n>=npos)) return;
 			pos[n].y=clamp1(y);
 		};
 
-		void set_all_values(REALTYPE val){
+		void set_all_values(float val){
 			for (int i=0;i<npos;i++){
 				if (pos[i].enabled) pos[i].y=extreme_y.real_value_to_coord(val);
 			}
@@ -205,15 +193,15 @@ class FreeEdit{
 		};
 
 		//smooth
-		REALTYPE get_smooth(){
+		float get_smooth(){
 			return smooth;
 		};
-		void set_smooth(REALTYPE smooth_){
+		void set_smooth(float smooth_){
 			smooth=clamp1(smooth_);;
 		};
 
 		//getting the curve
-		void get_curve(int datasize,REALTYPE *data,bool real_values);
+		void get_curve(int datasize,float *data,bool real_values);
 
 		~FreeEdit(){
 			delete []pos;
@@ -221,32 +209,31 @@ class FreeEdit{
 
 		//making/updating the curve
 		void update_curve(int size=16384);
-		REALTYPE get_value(REALTYPE x);
+		float get_value(float x);
 
 		//extremes
 		FreeEditExtremes extreme_x,extreme_y;
 
 		struct{
-			REALTYPE *data;
+			float *data;
 			int size;
 		}curve;
 	private:
-		inline REALTYPE clamp1(REALTYPE m){
+		inline float clamp1(float m){
 			if (m<0.0) return 0.0;
 			if (m>1.0) return 1.0;
 			return m;
-		};	
-		inline void swap(REALTYPE &m1,REALTYPE &m2){
-			REALTYPE tmp=m1;
+		};
+		inline void swap(float &m1,float &m2){
+			float tmp=m1;
 			m1=m2;
 			m2=tmp;
 		};
 		FreeEditPos *pos;
 		int npos;
-		REALTYPE smooth;
+		float smooth;
 		INTERP_MODE interp_mode;
 		bool enabled;
 };
 
 #endif
-

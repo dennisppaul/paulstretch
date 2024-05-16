@@ -3,7 +3,7 @@
   Author: Nasca Octavian Paul
 
   This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License 
+  it under the terms of version 2 of the GNU General Public License
   as published by the Free Software Foundation.
 
   This program is distributed in the hope that it will be useful,
@@ -35,20 +35,20 @@ class FFT{//FFT class that considers phases as random
 		void smp2freq();//input is smp, output is freq (phases are discarded)
 		void freq2smp();//input is freq,output is smp (phases are random)
 		void applywindow(FFTWindow type);
-		REALTYPE *smp;//size of samples/2
-		REALTYPE *freq;//size of samples
+		float *smp;//size of samples/2
+		float *freq;//size of samples
 		int nsamples;
 	private:
 #ifdef KISSFFT
-		kiss_fftr_cfg  plankfft,plankifft;	
+		kiss_fftr_cfg  plankfft,plankifft;
 		kiss_fft_scalar *datar;
 		kiss_fft_cpx *datac;
 #else
 		fftwf_plan planfftw,planifftw;
-		REALTYPE *data;
+		float *data;
 #endif
 		struct{
-			REALTYPE *data;
+			float *data;
 			FFTWindow type;
 		}window;
 
@@ -58,7 +58,7 @@ class FFT{//FFT class that considers phases as random
 
 class Stretch{
 	public:
-		Stretch(REALTYPE rap_,int in_bufsize_,FFTWindow w=W_HAMMING,bool bypass_=false,REALTYPE samplerate_=44100,int stereo_mode_=0);
+		Stretch(float rap_,int in_bufsize_,FFTWindow w=W_HAMMING,bool bypass_=false,float samplerate_=44100,int stereo_mode_=0);
 		//in_bufsize is also a half of a FFT buffer (in samples)
 		virtual ~Stretch();
 
@@ -69,55 +69,55 @@ class Stretch{
 			return bufsize;
 		};
 
-		REALTYPE get_onset_detection_sensitivity(){
+		float get_onset_detection_sensitivity(){
 			return onset_detection_sensitivity;
 		};
 
-		REALTYPE process(REALTYPE *smps,int nsmps);//returns the onset value
+		float process(float *smps,int nsmps);//returns the onset value
 		void set_freezing(bool new_freezing){
 			freezing=new_freezing;
 		};
 
 
-		REALTYPE *out_buf;//pot sa pun o variabila "max_out_bufsize" si asta sa fie marimea lui out_buf si pe out_bufsize sa il folosesc ca marime adaptiva
+		float *out_buf;//pot sa pun o variabila "max_out_bufsize" si asta sa fie marimea lui out_buf si pe out_bufsize sa il folosesc ca marime adaptiva
 
-		int get_nsamples(REALTYPE current_pos_percents);//how many samples are required 
+		int get_nsamples(float current_pos_percents);//how many samples are required
 		int get_nsamples_for_fill();//how many samples are required to be added for a complete buffer refill (at start of the song or after seek)
 		int get_skip_nsamples();//used for shorten
 
-		void set_rap(REALTYPE newrap);//set the current stretch value
+		void set_rap(float newrap);//set the current stretch value
 
-		void set_onset_detection_sensitivity(REALTYPE detection_sensitivity){
+		void set_onset_detection_sensitivity(float detection_sensitivity){
 			onset_detection_sensitivity=detection_sensitivity;
 			if (detection_sensitivity<1e-3) extra_onset_time_credit=0.0;
 		};
-		void here_is_onset(REALTYPE onset);
+		void here_is_onset(float onset);
 
 		FFTWindow window_type;
 	protected:
 		int bufsize;
 
-		virtual void process_spectrum(REALTYPE *freq){};
-		virtual REALTYPE get_stretch_multiplier(REALTYPE pos_percents);
-		REALTYPE samplerate;
+		virtual void process_spectrum(float *freq){};
+		virtual float get_stretch_multiplier(float pos_percents);
+		float samplerate;
 		int stereo_mode;//0=mono,1=left,2=right
 	private:
 
-		void do_analyse_inbuf(REALTYPE *smps);
-		void do_next_inbuf_smps(REALTYPE *smps);
-		REALTYPE do_detect_onset();
+		void do_analyse_inbuf(float *smps);
+		void do_next_inbuf_smps(float *smps);
+		float do_detect_onset();
 
-//		REALTYPE *in_pool;//de marimea in_bufsize
-		REALTYPE rap,onset_detection_sensitivity;
-		REALTYPE *old_out_smps;
-		REALTYPE *old_freq;
-		REALTYPE *new_smps,*old_smps,*very_old_smps;
+//		float *in_pool;//de marimea in_bufsize
+		float rap,onset_detection_sensitivity;
+		float *old_out_smps;
+		float *old_freq;
+		float *new_smps,*old_smps,*very_old_smps;
 
 		FFT *infft,*outfft;
 		FFT *fft;
 		long double remained_samples;//0..1
 		long double extra_onset_time_credit;
-		REALTYPE c_pos_percents;
+		float c_pos_percents;
 		int skip_samples;
 		bool require_new_buffer;
 		bool bypass,freezing;
@@ -125,4 +125,3 @@ class Stretch{
 
 
 #endif
-

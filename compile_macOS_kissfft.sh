@@ -4,12 +4,7 @@ rm -f $outfile
 # Compile C source files with gcc
 gcc -c \
 -I./contrib \
-contrib/*.c 
-# gcc -c \
-# -I./contrib/audiofile \
-# -I./contrib/audiofile/alac \
-# contrib/audiofile/*.c \
-# contrib/audiofile/alac/*.c
+contrib/*.c
 
 # Compile C++ source files with g++
 g++ -std=c++14 -DHAVE_UNISTD_H -DKISSFFT \
@@ -23,8 +18,8 @@ g++ -std=c++14 -DHAVE_UNISTD_H -DKISSFFT \
 # Link all object files together with g++
 g++ -std=c++14 \
 *.o \
--L/opt/homebrew/lib -lgtest -lgtest_main -lFLAC -lz -lpthread -lmad \
+-L/opt/homebrew/lib -lz -lpthread -lmad \
 -o $outfile
 
-# # Clean up object files if desired
+# Clean up object files if desired
 rm -f *.o

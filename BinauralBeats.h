@@ -1,10 +1,10 @@
 /*
- 
+
   Copyright (C) 2011 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
   This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License 
+  it under the terms of version 2 of the GNU General Public License
   as published by the Free Software Foundation.
 
   This program is distributed in the hope that it will be useful,
@@ -25,23 +25,23 @@
 
 class AP{//allpass
 	public:
-		AP(REALTYPE a_=0.5){
+		AP(float a_=0.5){
 			in1=in2=out1=out2=0.0;
 			set(a_);
 		};
-		REALTYPE process(REALTYPE in){
-			REALTYPE out=a*(in+out2)-in2;
+		float process(float in){
+			float out=a*(in+out2)-in2;
 			in2=in1;in1=in;
 			out2=out1;out1=out;
 
 			return out;
 		};
-		void set(REALTYPE a_){
+		void set(float a_){
 			a=a_*a_;
 		};
 	private:
-		REALTYPE in1,in2,out1,out2;
-		REALTYPE a;
+		float in1,in2,out1,out2;
+		float a;
 };
 
 
@@ -55,7 +55,7 @@ class Hilbert{
 			};
 			oldl=0.0;
 		};
-		void process(REALTYPE in, REALTYPE &out1, REALTYPE &out2){
+		void process(float in, float &out1, float &out2){
 			out1=oldl;
 			out2=in;
 
@@ -65,15 +65,15 @@ class Hilbert{
 			};
 
 
-			oldl=in;	
+			oldl=in;
 		};
 
 	private:
 		static const int N=4;
-		static const REALTYPE coefl[];
-		static const REALTYPE coefr[];
+		static const float coefl[];
+		static const float coefr[];
 		AP apl[N],apr[N];
-		REALTYPE oldl;
+		float oldl;
 };
 
 enum BB_STEREO_MODE{
@@ -91,18 +91,16 @@ struct BinauralBeatsParameters{
 	BB_STEREO_MODE stereo_mode;
 	float mono;
 	FreeEdit free_edit;
-	void add2XML(XMLwrapper *xml);
-	void getfromXML(XMLwrapper *xml);
 };
 
 class BinauralBeats{
 	public:
 		BinauralBeats(int samplerate_);
-		void process(REALTYPE *smpsl,REALTYPE *smpsr,int nsmps,REALTYPE pos_percents);
+		void process(float *smpsl,float *smpsr,int nsmps,float pos_percents);
 		BinauralBeatsParameters pars;
 	private:
 		int samplerate;
-		REALTYPE hilbert_t;
+		float hilbert_t;
 		Hilbert hl,hr;
 };
 

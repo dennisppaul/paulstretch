@@ -1,16 +1,16 @@
 /*
     Copyright (C) 2006-2011 Nasca Octavian Paul
 	Author: Nasca Octavian Paul
-	
+
 	This program is free software; you can redistribute it and/or modify
-	it under the terms of version 2 of the GNU General Public License 
+	it under the terms of version 2 of the GNU General Public License
 	as published by the Free Software Foundation.
-	
+
 	This program is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License (version 2) for more details.
-	
+
 	You should have received a copy of the GNU General Public License (version 2)
 	along with this program; if not, write to the Free Software Foundation,
 	Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
@@ -28,9 +28,9 @@ FFT::FFT(int nsamples_){
 		nsamples+=1;
 		printf("WARNING: Odd sample size on FFT::FFT() (%d)",nsamples);
 	};
-	smp=new REALTYPE[nsamples];for (int i=0;i<nsamples;i++) smp[i]=0.0;
-	freq=new REALTYPE[nsamples/2+1];for (int i=0;i<nsamples/2+1;i++) freq[i]=0.0;
-	window.data=new REALTYPE[nsamples];for (int i=0;i<nsamples;i++) window.data[i]=0.707;
+	smp=new float[nsamples];for (int i=0;i<nsamples;i++) smp[i]=0.0;
+	freq=new float[nsamples/2+1];for (int i=0;i<nsamples/2+1;i++) freq[i]=0.0;
+	window.data=new float[nsamples];for (int i=0;i<nsamples;i++) window.data[i]=0.707;
 	window.type=W_RECTANGULAR;
 
 #ifdef KISSFFT
@@ -41,7 +41,7 @@ FFT::FFT(int nsamples_){
 	plankfft = kiss_fftr_alloc(nsamples,0,0,0);
 	plankifft = kiss_fftr_alloc(nsamples,1,0,0);
 #else
-	data=new REALTYPE[nsamples];for (int i=0;i<nsamples;i++) data[i]=0.0;
+	data=new float[nsamples];for (int i=0;i<nsamples;i++) data[i]=0.0;
 	planfftw=fftwf_plan_r2r_1d(nsamples,data,data,FFTW_R2HC,FFTW_ESTIMATE);
 	planifftw=fftwf_plan_r2r_1d(nsamples,data,data,FFTW_HC2R,FFTW_ESTIMATE);
 #endif
@@ -76,11 +76,11 @@ void FFT::smp2freq(){
 
 	for (int i=1;i<nsamples/2;i++) {
 #ifdef KISSFFT
-		REALTYPE c=datac[i].r;
-		REALTYPE s=datac[i].i;
+		float c=datac[i].r;
+		float s=datac[i].i;
 #else
-		REALTYPE c=data[i];
-		REALTYPE s=data[nsamples-i];
+		float c=data[i];
+		float s=data[nsamples-i];
 #endif
 		freq[i]=sqrt(c*c+s*s);
 	};
@@ -88,11 +88,11 @@ void FFT::smp2freq(){
 };
 
 void FFT::freq2smp(){
-	REALTYPE inv_2p15_2pi=1.0/16384.0*M_PI;
+	float inv_2p15_2pi=1.0/16384.0*M_PI;
 	for (int i=1;i<nsamples/2;i++) {
 		rand_seed=(rand_seed*1103515245+12345);
 		unsigned int rand=(rand_seed>>16)&0x7fff;
-		REALTYPE phase=rand*inv_2p15_2pi;
+		float phase=rand*inv_2p15_2pi;
 #ifdef KISSFFT
 		datac[i].r=freq[i]*cos(phase);
 		datac[i].i=freq[i]*sin(phase);
@@ -141,7 +141,7 @@ void FFT::applywindow(FFTWindow type){
 /*******************************************/
 
 
-Stretch::Stretch(REALTYPE rap_,int bufsize_,FFTWindow w,bool bypass_,REALTYPE samplerate_,int stereo_mode_){
+Stretch::Stretch(float rap_,int bufsize_,FFTWindow w,bool bypass_,float samplerate_,int stereo_mode_){
 	freezing=false;
 	onset_detection_sensitivity=0.0;
 
@@ -152,14 +152,14 @@ Stretch::Stretch(REALTYPE rap_,int bufsize_,FFTWindow w,bool bypass_,REALTYPE sa
 	stereo_mode=stereo_mode_;
 	if (bufsize<8) bufsize=8;
 
-	out_buf=new REALTYPE[bufsize];
-	old_freq=new REALTYPE[bufsize];
+	out_buf=new float[bufsize];
+	old_freq=new float[bufsize];
 
-	very_old_smps=new REALTYPE[bufsize];
-	new_smps=new REALTYPE[bufsize];
-	old_smps=new REALTYPE[bufsize];
+	very_old_smps=new float[bufsize];
+	new_smps=new float[bufsize];
+	old_smps=new float[bufsize];
 
-	old_out_smps=new REALTYPE[bufsize*2];
+	old_out_smps=new float[bufsize*2];
 	for (int i=0;i<bufsize*2;i++) {
 		old_out_smps[i]=0.0;
 	};
@@ -194,12 +194,12 @@ Stretch::~Stretch(){
 	delete outfft;
 };
 
-void Stretch::set_rap(REALTYPE newrap){
-	//if ((rap>=1.0)&&(newrap>=1.0)) 
+void Stretch::set_rap(float newrap){
+	//if ((rap>=1.0)&&(newrap>=1.0))
 	rap=newrap;
 };
-		
-void Stretch::do_analyse_inbuf(REALTYPE *smps){
+
+void Stretch::do_analyse_inbuf(float *smps){
 	//get the frequencies
 	for (int i=0;i<bufsize;i++) {
 		infft->smp[i]=old_smps[i];
@@ -211,7 +211,7 @@ void Stretch::do_analyse_inbuf(REALTYPE *smps){
 	infft->smp2freq();
 };
 
-void Stretch::do_next_inbuf_smps(REALTYPE *smps){
+void Stretch::do_next_inbuf_smps(float *smps){
 	for (int i=0;i<bufsize;i++) {
 		very_old_smps[i]=old_smps[i];
 		old_smps[i]=new_smps[i];
@@ -219,11 +219,11 @@ void Stretch::do_next_inbuf_smps(REALTYPE *smps){
 	};
 };
 
-REALTYPE Stretch::do_detect_onset(){
-	REALTYPE result=0.0;
+float Stretch::do_detect_onset(){
+	float result=0.0;
 	if (onset_detection_sensitivity>1e-3){
-		REALTYPE os=0.0,osinc=0.0;
-		REALTYPE osincold=1e-5;
+		float os=0.0,osinc=0.0;
+		float osincold=1e-5;
 		int maxk=1+(int)(bufsize*500.0/(samplerate*0.5));
 		int k=0;
 		for (int i=0;i<bufsize;i++) {
@@ -240,8 +240,8 @@ REALTYPE Stretch::do_detect_onset(){
 		if (os<0.0) os=0.0;
 		//if (os>1.0) os=1.0;
 
-		REALTYPE os_strength=pow(20.0,1.0-onset_detection_sensitivity)-1.0;
-		REALTYPE os_strength_h=os_strength*0.75;
+		float os_strength=pow(20.0,1.0-onset_detection_sensitivity)-1.0;
+		float os_strength_h=os_strength*0.75;
 		if (os>os_strength_h){
 			result=(os-os_strength_h)/(os_strength-os_strength_h);
 			if (result>1.0) result=1.0;
@@ -252,8 +252,8 @@ REALTYPE Stretch::do_detect_onset(){
 	return result;
 };
 
-REALTYPE Stretch::process(REALTYPE *smps,int nsmps){
-	REALTYPE onset=0.0;
+float Stretch::process(float *smps,int nsmps){
+	float onset=0.0;
 	if (bypass){
 		for (int i=0;i<bufsize;i++) out_buf[i]=smps[i];
 		return 0.0;
@@ -265,7 +265,7 @@ REALTYPE Stretch::process(REALTYPE *smps,int nsmps){
 			return 0.0;
 		};
 		if (nsmps!=0){//new data arrived: update the frequency components
-			do_analyse_inbuf(smps);		
+			do_analyse_inbuf(smps);
 			if (nsmps==get_max_bufsize()) {
 				for (int k=bufsize;k<get_max_bufsize();k+=bufsize) do_analyse_inbuf(smps+k);
 			};
@@ -273,17 +273,17 @@ REALTYPE Stretch::process(REALTYPE *smps,int nsmps){
 		};
 
 
-		//move the buffers	
+		//move the buffers
 		if (nsmps!=0){//new data arrived: update the frequency components
-			do_next_inbuf_smps(smps);		
+			do_next_inbuf_smps(smps);
 			if (nsmps==get_max_bufsize()) {
 				for (int k=bufsize;k<get_max_bufsize();k+=bufsize) do_next_inbuf_smps(smps+k);
 
 			};
 		};
-	
+
 		//construct the input fft
-		int start_pos=(int)(floor(remained_samples*bufsize));	
+		int start_pos=(int)(floor(remained_samples*bufsize));
 		if (start_pos>=bufsize) start_pos=bufsize-1;
 		for (int i=0;i<bufsize-start_pos;i++) fft->smp[i]=very_old_smps[i+start_pos];
 		for (int i=0;i<bufsize;i++) fft->smp[i+bufsize-start_pos]=old_smps[i];
@@ -292,7 +292,7 @@ REALTYPE Stretch::process(REALTYPE *smps,int nsmps){
 		fft->applywindow(window_type);
 		fft->smp2freq();
 		for (int i=0;i<bufsize;i++) outfft->freq[i]=fft->freq[i];
-	
+
 
 
 		//for (int i=0;i<bufsize;i++) outfft->freq[i]=infft->freq[i]*remained_samples+old_freq[i]*(1.0-remained_samples);
@@ -303,15 +303,15 @@ REALTYPE Stretch::process(REALTYPE *smps,int nsmps){
 		outfft->freq2smp();
 
 		//make the output buffer
-		REALTYPE tmp=1.0/(float) bufsize*M_PI;
-		REALTYPE hinv_sqrt2=0.853553390593;//(1.0+1.0/sqrt(2))*0.5;
+		float tmp=1.0/(float) bufsize*M_PI;
+		float hinv_sqrt2=0.853553390593;//(1.0+1.0/sqrt(2))*0.5;
 
-		REALTYPE ampfactor=2.0;
-		
+		float ampfactor=2.0;
+
 		//remove the resulted unwanted amplitude modulation (caused by the interference of N and N+1 windowed buffer and compute the output buffer
 		for (int i=0;i<bufsize;i++) {
-			REALTYPE a=(0.5+0.5*cos(i*tmp));
-			REALTYPE out=outfft->smp[i+bufsize]*(1.0-a)+old_out_smps[i]*a;
+			float a=(0.5+0.5*cos(i*tmp));
+			float out=outfft->smp[i+bufsize]*(1.0-a)+old_out_smps[i]*a;
 			out_buf[i]=out*(hinv_sqrt2-(1.0-hinv_sqrt2)*cos(i*2.0*tmp))*ampfactor;
 		};
 
@@ -321,11 +321,11 @@ REALTYPE Stretch::process(REALTYPE *smps,int nsmps){
 	};
 
 	if (!freezing){
-		long double used_rap=rap*get_stretch_multiplier(c_pos_percents);	
+		long double used_rap=rap*get_stretch_multiplier(c_pos_percents);
 
 		long double r=1.0/used_rap;
 		if (extra_onset_time_credit>0){
-			REALTYPE credit_get=0.5*r;//must be smaller than r
+			float credit_get=0.5*r;//must be smaller than r
 			extra_onset_time_credit-=credit_get;
 			if (extra_onset_time_credit<0.0) extra_onset_time_credit=0.0;
 			r-=credit_get;
@@ -344,10 +344,10 @@ REALTYPE Stretch::process(REALTYPE *smps,int nsmps){
 	};
 //	long double rf_test=remained_samples-old_remained_samples_test;//this value should be almost like "rf" (for most of the time with the exception of changing the "ri" value) for extremely long stretches (otherwise the shown stretch value is not accurate)
 	//for stretch up to 10^18x "long double" must have at least 64 bits in the fraction part (true for gcc compiler on x86 and macosx)
-	return onset;	
+	return onset;
 };
 
-void Stretch::here_is_onset(REALTYPE onset){
+void Stretch::here_is_onset(float onset){
 	if (freezing) return;
 	if (onset>0.5){
 		require_new_buffer=true;
@@ -357,7 +357,7 @@ void Stretch::here_is_onset(REALTYPE onset){
 	};
 };
 
-int Stretch::get_nsamples(REALTYPE current_pos_percents){
+int Stretch::get_nsamples(float current_pos_percents){
 	if (bypass) return bufsize;
 	if (freezing) return 0;
 	c_pos_percents=current_pos_percents;
@@ -373,7 +373,6 @@ int Stretch::get_skip_nsamples(){
 	return skip_samples;
 };
 
-REALTYPE Stretch::get_stretch_multiplier(REALTYPE pos_percents){
+float Stretch::get_stretch_multiplier(float pos_percents){
 	return 1.0;
 };
-

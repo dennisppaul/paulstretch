@@ -3,7 +3,7 @@
   Author: Nasca Octavian Paul
 
   This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License 
+  it under the terms of version 2 of the GNU General Public License
   as published by the Free Software Foundation.
 
   This program is distributed in the hope that it will be useful,
@@ -22,8 +22,6 @@
 
 #include "FreeEdit.h"
 #include "Stretch.h"
-#include "XMLwrapper.h"
-
 
 struct ProcessParameters{
 	ProcessParameters(){
@@ -54,16 +52,14 @@ struct ProcessParameters{
 
 		spread.enabled=false;
 		spread.bandwidth=0.3;
-		
+
 		tonal_vs_noise.enabled=false;
 		tonal_vs_noise.preserve=0.5;
 		tonal_vs_noise.bandwidth=0.9;
 	};
 	~ProcessParameters(){
 	};
-	void add2XML(XMLwrapper *xml);
-	void getfromXML(XMLwrapper *xml);
-	
+
 	struct{
 		bool enabled;
 		int cents;
@@ -71,7 +67,7 @@ struct ProcessParameters{
 
 	struct{
 		bool enabled;
-		REALTYPE om2,om1,o0,o1,o15,o2;
+		float om2,om1,o0,o1,o15,o2;
 	}octave;
 
 	struct{
@@ -81,33 +77,33 @@ struct ProcessParameters{
 
 	struct{
 		bool enabled;
-		REALTYPE power;
+		float power;
 	}compressor;
 
 	struct{
 		bool enabled;
-		REALTYPE low,high;
-		REALTYPE hdamp;
+		float low,high;
+		float hdamp;
 		bool stop;
-	}filter;    
+	}filter;
 
 	struct{
 		bool enabled;
-		REALTYPE freq;
-		REALTYPE bandwidth;
+		float freq;
+		float bandwidth;
 		int nharmonics;
 		bool gauss;
 	}harmonics;
 
 	struct{
 		bool enabled;
-		REALTYPE bandwidth;
+		float bandwidth;
 	}spread;
 
 	struct{
 		bool enabled;
-		REALTYPE preserve;
-		REALTYPE bandwidth;
+		float preserve;
+		float bandwidth;
 	}tonal_vs_noise;
 
 	FreeEdit free_filter;
@@ -118,39 +114,37 @@ struct ProcessParameters{
 class ProcessedStretch:public Stretch{
 	public:
 		//stereo_mode: 0=mono,1=left,2=right
-		ProcessedStretch(REALTYPE rap_,int in_bufsize_,FFTWindow w=W_HAMMING,bool bypass_=false,REALTYPE samplerate_=44100,int stereo_mode=0);
+		ProcessedStretch(float rap_,int in_bufsize_,FFTWindow w=W_HAMMING,bool bypass_=false,float samplerate_=44100,int stereo_mode=0);
 		~ProcessedStretch();
 		void set_parameters(ProcessParameters *ppar);
 	private:
-		REALTYPE get_stretch_multiplier(REALTYPE pos_percents);
-//		void process_output(REALTYPE *smps,int nsmps);
-		void process_spectrum(REALTYPE *freq);
-		void do_harmonics(REALTYPE *freq1,REALTYPE *freq2);
-		void do_pitch_shift(REALTYPE *freq1,REALTYPE *freq2,REALTYPE rap);
-		void do_freq_shift(REALTYPE *freq1,REALTYPE *freq2);
-		void do_octave(REALTYPE *freq1,REALTYPE *freq2);
-		void do_filter(REALTYPE *freq1,REALTYPE *freq2);
-		void do_free_filter(REALTYPE *freq1,REALTYPE *freq2);
-		void do_compressor(REALTYPE *freq1,REALTYPE *freq2);
-		void do_spread(REALTYPE *freq1,REALTYPE *freq2);
-		void do_tonal_vs_noise(REALTYPE *freq1,REALTYPE *freq2);
+		float get_stretch_multiplier(float pos_percents);
+//		void process_output(float *smps,int nsmps);
+		void process_spectrum(float *freq);
+		void do_harmonics(float *freq1,float *freq2);
+		void do_pitch_shift(float *freq1,float *freq2,float rap);
+		void do_freq_shift(float *freq1,float *freq2);
+		void do_octave(float *freq1,float *freq2);
+		void do_filter(float *freq1,float *freq2);
+		void do_free_filter(float *freq1,float *freq2);
+		void do_compressor(float *freq1,float *freq2);
+		void do_spread(float *freq1,float *freq2);
+		void do_tonal_vs_noise(float *freq1,float *freq2);
 
-		void copy(REALTYPE *freq1,REALTYPE *freq2);
-		void add(REALTYPE *freq2,REALTYPE *freq1,REALTYPE a=1.0);
-		void mul(REALTYPE *freq1,REALTYPE a);
-		void zero(REALTYPE *freq1);
-		void spread(REALTYPE *freq1,REALTYPE *freq2,REALTYPE spread_bandwidth);
+		void copy(float *freq1,float *freq2);
+		void add(float *freq2,float *freq1,float a=1.0);
+		void mul(float *freq1,float a);
+		void zero(float *freq1);
+		void spread(float *freq1,float *freq2,float spread_bandwidth);
 
 		void update_free_filter();
 		int nfreq;
 
-		REALTYPE *free_filter_freqs;
+		float *free_filter_freqs;
 		ProcessParameters pars;
 
-		REALTYPE *infreq,*sumfreq,*tmpfreq1,*tmpfreq2;
-		//REALTYPE *fbfreq;
+		float *infreq,*sumfreq,*tmpfreq1,*tmpfreq2;
+		//float *fbfreq;
 };
 
 #endif
-
-
