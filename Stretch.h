@@ -80,7 +80,7 @@ class Stretch{
 		};
 
 
-		float *out_buf;//pot sa pun o variabila "max_out_bufsize" si asta sa fie marimea lui out_buf si pe out_bufsize sa il folosesc ca marime adaptiva
+		float *out_buf;//I can put a variable "max_out_bufsize" and let this be the size of out_buf and use out_bufsize as an adaptive size
 
 		int get_nsamples(float current_pos_percents);//how many samples are required
 		int get_nsamples_for_fill();//how many samples are required to be added for a complete buffer refill (at start of the song or after seek)
@@ -108,7 +108,7 @@ class Stretch{
 		void do_next_inbuf_smps(float *smps);
 		float do_detect_onset();
 
-//		float *in_pool;//de marimea in_bufsize
+//		float *in_pool;//of size in_bufsize
 		float rap,onset_detection_sensitivity;
 		float *old_out_smps;
 		float *old_freq;

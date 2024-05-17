@@ -62,8 +62,11 @@ string Render(string inaudio,string outaudio) {
     // 32bit PCM, little-endian, stereo, 44100 Hz
     std::ofstream outfile(outaudio, std::ios::binary | std::ios::out);
 
+    float in_pos_old = 0.0;
     while(!ai->eof){
         float in_pos=(float) ai->info.currentsample/(float)ai->info.nsamples;
+        float in_pos_delta = in_pos - in_pos_old;
+        in_pos_old = in_pos;
         if (firstbuf){
             readsize=stretchl->get_nsamples_for_fill();
             firstbuf=false;
@@ -73,6 +76,7 @@ string Render(string inaudio,string outaudio) {
         int readed=0;
         if (readsize!=0) readed=ai->read(readsize,inbuf_i);
 
+        cout << "in_pos_delta(" << in_pos_delta << ") " << flush;
         cout << "readed(" << readed << ") " << flush;
         cout << "readsize(" << readsize << ") " << flush;
 
@@ -125,7 +129,7 @@ string Render(string inaudio,string outaudio) {
 int main(int argc, char **argv) {
     wav32bit=false;
 
-    process.bufsize = 44100 * 0.125; // 0.125 seconds
+    process.bufsize = 44100 * 0.25; // 0.25 seconds
     process.stretch = 8.0;
     process.onset_detection_sensitivity = 0.0;
 
