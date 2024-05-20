@@ -417,23 +417,27 @@ public:
         delete pInputBuffer;
     }
 
-    float* get_input_buffer_ptr() {
+    void fill_input_buffer(float* input_buffer, int number_of_samples) {
+        for (int i = 0; i < number_of_samples; i++) {
+            pInputBuffer[i] = input_buffer[i];
+        }
+    }
+
+    float *get_input_buffer() {
         return pInputBuffer;
     }
 
     std::vector<float> process() {
         std::vector<float> mSamples;
-        int mSamplesRequired = 0;
-        while(mSamplesRequired == 0) {
+        do {
             stretcher->process(pInputBuffer, pRequiredSamples);
             pRequiredSamples = 0;
             cout << "." << flush;
             for (int i = 0; i < outbufsize; i++) {
                 mSamples.push_back(stretcher->out_buf[i]);
             }
-            mSamplesRequired = stretcher->get_nsamples(0);
-        }
-        pRequiredSamples = mSamplesRequired;
+            pRequiredSamples = stretcher->get_nsamples(0);
+        } while(pRequiredSamples == 0);
         return mSamples;
     }
 
@@ -469,11 +473,19 @@ string Render_Self(string inaudio, string outaudio) {
     while (!ai->eof) {
         int mNumRequestedSamples = stretch.get_required_samples();
         cout << "get_required_samples: " << mNumRequestedSamples << endl;
-        int mReadSamples = ai->read(mNumRequestedSamples, mReadBuffer);
-        for (int i = 0; i < mReadSamples; i++) {
-            stretch.get_input_buffer_ptr()[i] = mReadBuffer[i * 2] / 32768.0;
+        int mNumReadSamples = ai->read(mNumRequestedSamples, mReadBuffer);
+        // float* mInputBuffer = new float[mNumReadSamples];
+        // for (int i = 0; i < mNumReadSamples; i++) {
+        //     mInputBuffer[i] = mReadBuffer[i * 2] / 32768.0;
+        //    stretch.get_input_buffer()[i] = mReadBuffer[i * 2] / 32768.0;
+        // }
+        // stretch.fill_input_buffer(mInputBuffer, mNumRequestedSamples);
+        // delete[] mInputBuffer;
+        // vector<float> mSamples = stretch.process();
+        for (int i = 0; i < mNumReadSamples; i++) {
+            stretch.get_input_buffer()[i] = mReadBuffer[i * 2] / 32768.0;
         }
-        std::vector<float> mSamples = stretch.process();
+        vector<float> mSamples = stretch.process();
 
         cout << "processed samples: " << mSamples.size() << endl;
         int *outbuf = new int[mSamples.size()];
