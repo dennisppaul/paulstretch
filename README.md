@@ -1,6 +1,6 @@
 # paulstretch
 
-forked from from https://github.com/paulnasca/paulstretch_cpp
+forked from https://github.com/paulnasca/paulstretch_cpp
 
 this is a simplified version of paulstretch. in `main.cpp` it is illustrated how to use the `‌ProcessedStretch` class to continously feed blocks of sample data to the algorithm to produce the stretched results. the 4 steps to achieve looks approximately like this:
 
