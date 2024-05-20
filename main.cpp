@@ -5,8 +5,7 @@
 #include <iostream>
 #include <vector>
 
-#include "ProcessedStretch.h"
-#include "Input/MP3InputS.h"
+#include "input/MP3InputS.h"
 #include "PaulStretch.h"
 
 using namespace std;
@@ -37,6 +36,29 @@ string render_file(string inaudio, string outaudio) {
         int mNumRequestedSamples = stretch.get_required_samples();
         cout << "get_required_samples: " << mNumRequestedSamples << endl;
         int mNumReadSamples = ai->read(mNumRequestedSamples, mReadBuffer);
+// #define PROCESS_BY_SEGMENT
+#ifdef PROCESS_BY_SEGMENT
+        // TODO does not work properly yet
+        for (int i = 0; i < mNumReadSamples; i++) {
+            stretch.get_input_buffer()[i] = mReadBuffer[i * 2] / 32768.0;
+        }
+        const int mBufferSize = stretch.get_output_buffer_size();
+        float* mSamples = new float[mBufferSize];
+        while (stretch.process_segment(mSamples)) {
+            int* outbuf = new int[mBufferSize];
+            for (int i = 0; i < mBufferSize; i++) {
+                float l = mSamples[i];
+                if (l < -1.0)
+                    l = -1.0;
+                else if (l > 1.0)
+                    l = 1.0;
+                outbuf[i] = (int)(l * 32767.0 * 65536.0);
+            };
+            outfile.write(reinterpret_cast<char*>(outbuf), mBufferSize * sizeof(int));
+            delete[] outbuf;
+        }
+        delete[] mSamples;
+#else
 #ifdef USE_FILL_BUFFER
         float* mInputBuffer = new float[mNumReadSamples];
         for (int i = 0; i < mNumReadSamples; i++) {
@@ -51,7 +73,6 @@ string render_file(string inaudio, string outaudio) {
         }
 #endif
         vector<float> mSamples = stretch.process();
-
         cout << "processed samples: " << mSamples.size() << endl;
         int* outbuf = new int[mSamples.size()];
         for (int i = 0; i < mSamples.size(); i++) {
@@ -63,6 +84,8 @@ string render_file(string inaudio, string outaudio) {
             outbuf[i] = (int)(l * 32767.0 * 65536.0);
         };
         outfile.write(reinterpret_cast<char*>(outbuf), mSamples.size() * sizeof(int));
+        delete[] outbuf;
+#endif
     }
     outfile.close();
 

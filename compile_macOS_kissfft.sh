@@ -11,8 +11,8 @@ g++ -std=c++14 -DKISSFFT \
 -c \
 -I/opt/homebrew/include \
 -I./contrib \
--I./Input \
-./Input/*.cpp \
+-I./input \
+./input/*.cpp \
 *.cpp
 
 # Link all object files together with g++

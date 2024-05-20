@@ -3,7 +3,7 @@
 #include <vector>
 #include <iostream>
 
-#include "Stretch.h"
+#include "ProcessedStretchCompact.h"
 
 class PaulStretch {
 public:
@@ -11,12 +11,12 @@ public:
         pInputBufferSize(buffer_size),
         pStretch(stretch),
         pSampleRate(samplerate) {
-        stretcher = new ProcessedStretch(stretch,
+        stretcher = new ProcessedStretchCompact(stretch,
             buffer_size,
-            W_HANN,
+            _FFT::_W_HANN,
             false,
             samplerate, 0);
-        stretcher->set_parameters(&pParameters);
+        // stretcher->set_parameters(&pParameters);
         stretcher->set_onset_detection_sensitivity(0.0);
         outbufsize = stretcher->get_bufsize();
         const int mPoolSize = stretcher->get_max_bufsize();
@@ -44,11 +44,20 @@ public:
         return pInputBuffer;
     }
 
+    bool process_segment(float* buffer) {
+        stretcher->process(pInputBuffer, pRequiredSamples);
+        for (int i = 0; i < outbufsize; i++) {
+            buffer[i] = stretcher->out_buf[i];
+        }
+        pRequiredSamples = stretcher->get_nsamples(0);
+        return pRequiredSamples == 0;
+    }
+
     std::vector<float> process() {
         std::vector<float> mSamples;
         do {
             stretcher->process(pInputBuffer, pRequiredSamples);
-            pRequiredSamples = 0;
+            // pRequiredSamples = 0;
             for (int i = 0; i < outbufsize; i++) {
                 mSamples.push_back(stretcher->out_buf[i]);
             }
@@ -61,9 +70,13 @@ public:
         return pRequiredSamples;
     }
 
+    int get_output_buffer_size() {
+        return outbufsize;
+    }
+
 private:
-    ProcessedStretch* stretcher;
-    ProcessParameters pParameters;
+    ProcessedStretchCompact* stretcher;
+    // ProcessParameters pParameters;
     int pInputBufferSize;
     int pStretch;
     int pSampleRate;
