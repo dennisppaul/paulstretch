@@ -377,8 +377,7 @@ void ProcessedStretch::process(float* smps, int nsmps) {
 			skip_samples = (int)(floor(remained_samples - 1.0) * bufsize);
 			remained_samples = remained_samples - floor(remained_samples);
 			require_new_buffer = true;
-		}
-		else {
+		} else {
 			require_new_buffer = false;
 		};
 	};

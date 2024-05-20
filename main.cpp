@@ -54,10 +54,7 @@ string render_file(string inaudio, string outaudio) {
             int* outbuf = new int[mBufferSize];
             for (int i = 0; i < mBufferSize; i++) {
                 float l = mSamples[i];
-                if (l < -1.0)
-                    l = -1.0;
-                else if (l > 1.0)
-                    l = 1.0;
+                if (l < -1.0) { l = -1.0; } else if (l > 1.0) { l = 1.0; }
                 outbuf[i] = (int)(l * 32767.0 * 65536.0);
             };
             outfile.write(reinterpret_cast<char*>(outbuf), mBufferSize * sizeof(int));
