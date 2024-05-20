@@ -7,7 +7,7 @@ gcc -c \
 contrib/*.c
 
 # Compile C++ source files with g++
-g++ -std=c++14 -DHAVE_UNISTD_H -DKISSFFT \
+g++ -std=c++14 -DKISSFFT \
 -c \
 -I/opt/homebrew/include \
 -I./contrib \
