@@ -27,8 +27,7 @@ ProcessedStretchCompact::ProcessedStretchCompact(float rap_,
 	int in_bufsize_,
 	_FFT::_FFTWindow w,
 	bool bypass_,
-	float samplerate_,
-	int stereo_mode_) {
+	float samplerate_) {
 
 	freezing = false;
 	onset_detection_sensitivity = 0.0;
@@ -37,7 +36,6 @@ ProcessedStretchCompact::ProcessedStretchCompact(float rap_,
 	rap = rap_;
 	bufsize = in_bufsize_;
 	bypass = bypass_;
-	stereo_mode = stereo_mode_;
 	if (bufsize < 8) bufsize = 8;
 
 	out_buf = new float[bufsize];

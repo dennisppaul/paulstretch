@@ -33,18 +33,24 @@ string render_file(string inaudio, string outaudio) {
          * 3. process input buffer
          * 4. use output buffer samples
         */
+        // 1. get required samples
         int mNumRequestedSamples = stretch.get_required_samples();
         cout << "get_required_samples: " << mNumRequestedSamples << endl;
         int mNumReadSamples = ai->read(mNumRequestedSamples, mReadBuffer);
-// #define PROCESS_BY_SEGMENT
+#define PROCESS_BY_SEGMENT
 #ifdef PROCESS_BY_SEGMENT
-        // TODO does not work properly yet
+        // 2. fill input buffer with number of required samples
         for (int i = 0; i < mNumReadSamples; i++) {
             stretch.get_input_buffer()[i] = mReadBuffer[i * 2] / 32768.0;
         }
         const int mBufferSize = stretch.get_output_buffer_size();
         float* mSamples = new float[mBufferSize];
-        while (stretch.process_segment(mSamples)) {
+        int mNumOfTotalSamples = 0;
+        bool mHasMoreSamples = true;
+        while (mHasMoreSamples) {
+            // 3. process input buffer
+            mHasMoreSamples = stretch.process_segment(mSamples);
+            // 4. use output buffer samples
             int* outbuf = new int[mBufferSize];
             for (int i = 0; i < mBufferSize; i++) {
                 float l = mSamples[i];
@@ -56,7 +62,9 @@ string render_file(string inaudio, string outaudio) {
             };
             outfile.write(reinterpret_cast<char*>(outbuf), mBufferSize * sizeof(int));
             delete[] outbuf;
+            mNumOfTotalSamples += mBufferSize;
         }
+        cout << "processed samples: " << mNumOfTotalSamples << endl;
         delete[] mSamples;
 #else
 #ifdef USE_FILL_BUFFER
@@ -72,7 +80,10 @@ string render_file(string inaudio, string outaudio) {
             stretch.get_input_buffer()[i] = mReadBuffer[i * 2] / 32768.0;
         }
 #endif
-        vector<float> mSamples = stretch.process();
+        vector<float> mSamples;
+        mSamples.clear();
+        mSamples.reserve(stretch.get_output_buffer_size() * 8);
+        stretch.process(mSamples);
         cout << "processed samples: " << mSamples.size() << endl;
         int* outbuf = new int[mSamples.size()];
         for (int i = 0; i < mSamples.size(); i++) {

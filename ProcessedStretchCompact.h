@@ -58,13 +58,11 @@ private:
 
 class ProcessedStretchCompact {
 public:
-	//stereo_mode: 0=mono,1=left,2=right
 	ProcessedStretchCompact(float rap_,
 		int in_bufsize_,
 		_FFT::_FFTWindow w = _FFT::_W_HAMMING,
 		bool bypass_ = false,
-		float samplerate_ = 44100,
-		int stereo_mode = 0);
+		float samplerate_ = 44100);
 	~ProcessedStretchCompact();
 
 	int get_max_bufsize() {
@@ -109,7 +107,6 @@ private:
 	void process_spectrum(float* freq) {};
 	float get_stretch_multiplier(float pos_percents);
 	float samplerate;
-	int stereo_mode;//0=mono,1=left,2=right
 
 	float _profile(float fi, float bwi);
 
@@ -117,7 +114,6 @@ private:
 	void do_next_inbuf_smps(float* smps);
 	float do_detect_onset();
 
-	//		float *in_pool;//of size in_bufsize
 	float rap, onset_detection_sensitivity;
 	float* old_out_smps;
 	float* old_freq;
@@ -138,11 +134,9 @@ private:
 	void zero(float* freq1);
 	void spread(float* freq1, float* freq2, float spread_bandwidth);
 
-	// void update_free_filter();
 	int nfreq;
 
 	float* free_filter_freqs;
 
 	float* infreq, * sumfreq, * tmpfreq1, * tmpfreq2;
-	//float *fbfreq;
 };
