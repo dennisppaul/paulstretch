@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include "ProcessedStretchCompact.h"
+#include "ProcessedStretch.h"
 
 class PaulStretch {
 public:
@@ -12,12 +12,11 @@ public:
         pInputBufferSize(buffer_size),
         pStretch(stretch_value),
         pSampleRate(samplerate) {
-        stretch = new ProcessedStretchCompact(stretch_value,
+        stretch = new ProcessedStretch(stretch_value,
             buffer_size,
-            _FFT::_W_HANN,
+            FFT::_W_HANN,
             false,
             samplerate);
-        stretch->set_onset_detection_sensitivity(0.0);
         pOutputBufferSize = stretch->get_bufsize();
         const int mPoolSize = stretch->get_max_bufsize();
 
@@ -66,11 +65,11 @@ public:
     }
 
     int get_output_buffer_size() {
-        return pOutputBufferSizex;
+        return pOutputBufferSize;
     }
 
 private:
-    ProcessedStretchCompact* stretch;
+    ProcessedStretch* stretch;
     int pInputBufferSize;
     int pOutputBufferSize;
     int pStretch;

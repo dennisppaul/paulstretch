@@ -21,16 +21,15 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "ProcessedStretchCompact.h"
+#include "ProcessedStretch.h"
 
-ProcessedStretchCompact::ProcessedStretchCompact(float rap_,
+ProcessedStretch::ProcessedStretch(float rap_,
 	int in_bufsize_,
-	_FFT::_FFTWindow w,
+	FFT::FFTWindow w,
 	bool bypass_,
 	float samplerate_) {
 
 	freezing = false;
-	onset_detection_sensitivity = 0.0;
 
 	samplerate = samplerate_;
 	rap = rap_;
@@ -56,37 +55,32 @@ ProcessedStretchCompact::ProcessedStretchCompact(float rap_,
 		very_old_smps[i] = 0.0;
 	};
 
-	infft = new _FFT(bufsize * 2);
-	fft = new _FFT(bufsize * 2);
-	outfft = new _FFT(bufsize * 2);
+	infft = new FFT(bufsize * 2);
+	fft = new FFT(bufsize * 2);
+	outfft = new FFT(bufsize * 2);
 	remained_samples = 0.0;
 	window_type = w;
 	require_new_buffer = false;
 	c_pos_percents = 0.0;
-	extra_onset_time_credit = 0.0;
 	skip_samples = 0;
-
-	/* ---------------------------- */
 
 	nfreq = bufsize;
 	infreq = new float[nfreq];
 	sumfreq = new float[nfreq];
 	tmpfreq1 = new float[nfreq];
 	tmpfreq2 = new float[nfreq];
-	//fbfreq=new float[nfreq];
 	free_filter_freqs = new float[nfreq];
 	for (int i = 0;i < nfreq;i++) {
 		free_filter_freqs[i] = 1.0;
-		//	fbfreq[i]=0.0;
 	};
 };
-ProcessedStretchCompact::~ProcessedStretchCompact() {
+
+ProcessedStretch::~ProcessedStretch() {
 	delete[] infreq;
 	delete[] sumfreq;
 	delete[] tmpfreq1;
 	delete[] tmpfreq2;
 	delete[] free_filter_freqs;
-	//	delete [] fbfreq;
 
 	delete[] old_freq;
 	delete[] out_buf;
@@ -99,70 +93,24 @@ ProcessedStretchCompact::~ProcessedStretchCompact() {
 	delete outfft;
 };
 
-// void ProcessedStretchCompact::set_parameters(ProcessParameters* ppar) {
-// 	pars = *ppar;
-// 	update_free_filter();
-// };
-
-void ProcessedStretchCompact::copy(float* freq1, float* freq2) {
+void ProcessedStretch::copy(float* freq1, float* freq2) {
 	for (int i = 0;i < nfreq;i++) freq2[i] = freq1[i];
 };
 
-void ProcessedStretchCompact::add(float* freq2, float* freq1, float a) {
+void ProcessedStretch::add(float* freq2, float* freq1, float a) {
 	for (int i = 0;i < nfreq;i++) freq2[i] += freq1[i] * a;
 };
 
-void ProcessedStretchCompact::mul(float* freq1, float a) {
+void ProcessedStretch::mul(float* freq1, float a) {
 	for (int i = 0;i < nfreq;i++) freq1[i] *= a;
 };
 
-void ProcessedStretchCompact::zero(float* freq1) {
+void ProcessedStretch::zero(float* freq1) {
 	for (int i = 0;i < nfreq;i++) freq1[i] = 0.0;
 };
 
-float ProcessedStretchCompact::get_stretch_multiplier(float pos_percents) {
-	float result = 1.0;
-	// if (pars.stretch_multiplier.get_enabled()) {
-	// 	result *= pars.stretch_multiplier.get_value(pos_percents);
-	// };
-	///float transient=pars.get_transient(pos_percents);
-	///printf("\n%g\n",transient);
-	///float threshold=0.05;
-	///float power=1000.0;
-	///transient-=threshold;
-	///if (transient>0){
-	///	transient*=power*(1.0+power);
-	///	result/=(1.0+transient);
-	///};
-	///printf("tr=%g\n",result);
-	return result;
-};
-
-float ProcessedStretchCompact::_profile(float fi, float bwi) {
-	float x = fi / bwi;
-	x *= x;
-	if (x > 14.71280603) return 0.0;
-	return exp(-x);///bwi;
-
-};
-
-// void ProcessedStretchCompact::update_free_filter() {
-// 	pars.free_filter.update_curve();
-// 	if (pars.free_filter.get_enabled()) {
-// 		for (int i = 0;i < nfreq;i++) {
-// 			float freq = (float)i / (float)nfreq * samplerate * 0.5;
-// 			free_filter_freqs[i] = pars.free_filter.get_value(freq);
-// 		};
-// 	}
-// 	else {
-// 		for (int i = 0;i < nfreq;i++) {
-// 			free_filter_freqs[i] = 1.0;
-// 		};
-// 	};
-// };
-
-void ProcessedStretchCompact::spread(float* freq1, float* freq2, float spread_bandwidth) {
-	//convert to log spectrum
+void ProcessedStretch::spread(float* freq1, float* freq2, float spread_bandwidth) {
+	// convert to log spectrum
 	float minfreq = 20.0;
 	float maxfreq = 0.5 * samplerate;
 
@@ -182,7 +130,7 @@ void ProcessedStretchCompact::spread(float* freq1, float* freq2, float spread_ba
 		tmpfreq1[i] = y;
 	};
 
-	//increase the bandwidth of each harmonic (by smoothing the log spectrum)
+	// increase the bandwidth of each harmonic (by smoothing the log spectrum)
 	int n = 2;
 	float bandwidth = spread_bandwidth;
 	float a = 1.0 - pow(2.0, -bandwidth * bandwidth * 10.0);
@@ -217,13 +165,9 @@ void ProcessedStretchCompact::spread(float* freq1, float* freq2, float spread_ba
 
 };
 
-/* --- FROM STRETCH.CPP --- */
-/* --- FROM STRETCH.CPP --- */
-/* --- FROM STRETCH.CPP --- */
+unsigned int FFT::start_rand_seed = 1;
 
-unsigned int _FFT::start_rand_seed = 1;
-
-_FFT::_FFT(int nsamples_) {
+FFT::FFT(int nsamples_) {
 	nsamples = nsamples_;
 	if (nsamples % 2 != 0) {
 		nsamples += 1;
@@ -250,7 +194,7 @@ _FFT::_FFT(int nsamples_) {
 	start_rand_seed += 161103;
 };
 
-_FFT::~_FFT() {
+FFT::~FFT() {
 	delete[]smp;
 	delete[]freq;
 	delete[]window.data;
@@ -266,7 +210,7 @@ _FFT::~_FFT() {
 #endif
 };
 
-void _FFT::smp2freq() {
+void FFT::smp2freq() {
 #ifdef KISSFFT
 	for (int i = 0;i < nsamples;i++) datar[i] = smp[i];
 	kiss_fftr(plankfft, datar, datac);
@@ -288,7 +232,7 @@ void _FFT::smp2freq() {
 	freq[0] = 0.0;
 };
 
-void _FFT::freq2smp() {
+void FFT::freq2smp() {
 	float inv_2p15_2pi = 1.0 / 16384.0 * M_PI;
 	for (int i = 1;i < nsamples / 2;i++) {
 		rand_seed = (rand_seed * 1103515245 + 12345);
@@ -314,7 +258,7 @@ void _FFT::freq2smp() {
 #endif
 };
 
-void _FFT::applywindow(_FFTWindow type) {
+void FFT::applywindow(FFTWindow type) {
 	if (window.type != type) {
 		window.type = type;
 		switch (type) {
@@ -339,15 +283,12 @@ void _FFT::applywindow(_FFTWindow type) {
 	for (int i = 0;i < nsamples;i++) smp[i] *= window.data[i];
 };
 
-/*******************************************/
-
-void ProcessedStretchCompact::set_rap(float newrap) {
-	//if ((rap>=1.0)&&(newrap>=1.0))
+void ProcessedStretch::set_rap(float newrap) {
 	rap = newrap;
 };
 
-void ProcessedStretchCompact::do_analyse_inbuf(float* smps) {
-	//get the frequencies
+void ProcessedStretch::do_analyse_inbuf(float* smps) {
+	// get the frequencies
 	for (int i = 0;i < bufsize;i++) {
 		infft->smp[i] = old_smps[i];
 		infft->smp[i + bufsize] = smps[i];
@@ -358,7 +299,7 @@ void ProcessedStretchCompact::do_analyse_inbuf(float* smps) {
 	infft->smp2freq();
 };
 
-void ProcessedStretchCompact::do_next_inbuf_smps(float* smps) {
+void ProcessedStretch::do_next_inbuf_smps(float* smps) {
 	for (int i = 0;i < bufsize;i++) {
 		very_old_smps[i] = old_smps[i];
 		old_smps[i] = new_smps[i];
@@ -366,62 +307,26 @@ void ProcessedStretchCompact::do_next_inbuf_smps(float* smps) {
 	};
 };
 
-float ProcessedStretchCompact::do_detect_onset() {
-	float result = 0.0;
-	if (onset_detection_sensitivity > 1e-3) {
-		float os = 0.0, osinc = 0.0;
-		float osincold = 1e-5;
-		int maxk = 1 + (int)(bufsize * 500.0 / (samplerate * 0.5));
-		int k = 0;
-		for (int i = 0;i < bufsize;i++) {
-			osinc += infft->freq[i] - old_freq[i];
-			osincold += old_freq[i];
-			if (k >= maxk) {
-				k = 0;
-				os += osinc / osincold;
-				osinc = 0;
-			};
-			k++;
-		};
-		os += osinc;
-		if (os < 0.0) os = 0.0;
-		//if (os>1.0) os=1.0;
-
-		float os_strength = pow(20.0, 1.0 - onset_detection_sensitivity) - 1.0;
-		float os_strength_h = os_strength * 0.75;
-		if (os > os_strength_h) {
-			result = (os - os_strength_h) / (os_strength - os_strength_h);
-			if (result > 1.0) result = 1.0;
-		};
-
-		if (result > 1.0) result = 1.0;
-	};
-	return result;
-};
-
-float ProcessedStretchCompact::process(float* smps, int nsmps) {
-	float onset = 0.0;
+void ProcessedStretch::process(float* smps, int nsmps) {
 	if (bypass) {
 		for (int i = 0;i < bufsize;i++) out_buf[i] = smps[i];
-		return 0.0;
+		return;
 	};
 
 	if (smps != NULL) {
 		if ((nsmps != 0) && (nsmps != bufsize) && (nsmps != get_max_bufsize())) {
 			printf("Warning wrong nsmps on ProcessedStretchCompact::process() %d,%d\n", nsmps, bufsize);
-			return 0.0;
+			return;
 		};
-		if (nsmps != 0) {//new data arrived: update the frequency components
+		if (nsmps != 0) { // new data arrived: update the frequency components
 			do_analyse_inbuf(smps);
 			if (nsmps == get_max_bufsize()) {
 				for (int k = bufsize;k < get_max_bufsize();k += bufsize) do_analyse_inbuf(smps + k);
 			};
-			if (onset_detection_sensitivity > 1e-3) onset = do_detect_onset();
 		};
 
-
-		//move the buffers
-		if (nsmps != 0) {//new data arrived: update the frequency components
+		// move the buffers
+		if (nsmps != 0) { // new data arrived: update the frequency components
 			do_next_inbuf_smps(smps);
 			if (nsmps == get_max_bufsize()) {
 				for (int k = bufsize;k < get_max_bufsize();k += bufsize) do_next_inbuf_smps(smps + k);
@@ -429,55 +334,42 @@ float ProcessedStretchCompact::process(float* smps, int nsmps) {
 			};
 		};
 
-		//construct the input fft
+		// construct the input fft
 		int start_pos = (int)(floor(remained_samples * bufsize));
 		if (start_pos >= bufsize) start_pos = bufsize - 1;
 		for (int i = 0;i < bufsize - start_pos;i++) fft->smp[i] = very_old_smps[i + start_pos];
 		for (int i = 0;i < bufsize;i++) fft->smp[i + bufsize - start_pos] = old_smps[i];
 		for (int i = 0;i < start_pos;i++) fft->smp[i + 2 * bufsize - start_pos] = new_smps[i];
-		//compute the output spectrum
+		// compute the output spectrum
 		fft->applywindow(window_type);
 		fft->smp2freq();
 		for (int i = 0;i < bufsize;i++) outfft->freq[i] = fft->freq[i];
-
-
-
-		//for (int i=0;i<bufsize;i++) outfft->freq[i]=infft->freq[i]*remained_samples+old_freq[i]*(1.0-remained_samples);
-
 
 		process_spectrum(outfft->freq);
 
 		outfft->freq2smp();
 
-		//make the output buffer
+		// make the output buffer
 		float tmp = 1.0 / (float)bufsize * M_PI;
 		float hinv_sqrt2 = 0.853553390593;//(1.0+1.0/sqrt(2))*0.5;
 
 		float ampfactor = 2.0;
 
-		//remove the resulted unwanted amplitude modulation (caused by the interference of N and N+1 windowed buffer and compute the output buffer
+		// remove the resulted unwanted amplitude modulation (caused by the interference of N and N+1 windowed buffer and compute the output buffer
 		for (int i = 0;i < bufsize;i++) {
+			// TODO optimize with faster cos function
 			float a = (0.5 + 0.5 * cos(i * tmp));
 			float out = outfft->smp[i + bufsize] * (1.0 - a) + old_out_smps[i] * a;
 			out_buf[i] = out * (hinv_sqrt2 - (1.0 - hinv_sqrt2) * cos(i * 2.0 * tmp)) * ampfactor;
 		};
 
-		//copy the current output buffer to old buffer
+		// copy the current output buffer to old buffer
 		for (int i = 0;i < bufsize * 2;i++) old_out_smps[i] = outfft->smp[i];
-
 	};
 
 	if (!freezing) {
-		long double used_rap = rap * get_stretch_multiplier(c_pos_percents);
-
+		long double used_rap = rap;
 		long double r = 1.0 / used_rap;
-		if (extra_onset_time_credit > 0) {
-			float credit_get = 0.5 * r;//must be smaller than r
-			extra_onset_time_credit -= credit_get;
-			if (extra_onset_time_credit < 0.0) extra_onset_time_credit = 0.0;
-			r -= credit_get;
-		};
-
 		long double old_remained_samples_test = remained_samples;
 		remained_samples += r;
 		int result = 0;
@@ -490,34 +382,20 @@ float ProcessedStretchCompact::process(float* smps, int nsmps) {
 			require_new_buffer = false;
 		};
 	};
-	//	long double rf_test=remained_samples-old_remained_samples_test;//this value should be almost like "rf" (for most of the time with the exception of changing the "ri" value) for extremely long stretches (otherwise the shown stretch value is not accurate)
-		//for stretch up to 10^18x "long double" must have at least 64 bits in the fraction part (true for gcc compiler on x86 and macosx)
-	return onset;
 };
 
-void ProcessedStretchCompact::here_is_onset(float onset) {
-	if (freezing) return;
-	if (onset > 0.5) {
-		require_new_buffer = true;
-		extra_onset_time_credit += 1.0 - remained_samples;
-		remained_samples = 0.0;
-		skip_samples = 0;
-	};
-};
-
-int ProcessedStretchCompact::get_nsamples(float current_pos_percents) {
+int ProcessedStretch::get_nsamples(float current_pos_percents) {
 	if (bypass) return bufsize;
 	if (freezing) return 0;
 	c_pos_percents = current_pos_percents;
 	return require_new_buffer ? bufsize : 0;
 };
 
-int ProcessedStretchCompact::get_nsamples_for_fill() {
+int ProcessedStretch::get_nsamples_for_fill() {
 	return get_max_bufsize();
 };
 
-int ProcessedStretchCompact::get_skip_nsamples() {
+int ProcessedStretch::get_skip_nsamples() {
 	if (freezing || bypass) return 0;
 	return skip_samples;
 };
-
