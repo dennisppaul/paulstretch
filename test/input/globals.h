@@ -24,6 +24,10 @@
 
 void sleep(int ms);
 
-#define ZERO(data,size) {char *data_=(char *) data;for (int i=0;i<size;i++) data_[i]=0;};
+#define ZERO(data, size)                             \
+    {                                                \
+        char* data_ = (char*) data;                  \
+        for (int i = 0; i < size; i++) data_[i] = 0; \
+    };
 
 #endif

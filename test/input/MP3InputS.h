@@ -24,28 +24,27 @@
 #include "InputS.h"
 
 
-class MP3InputS:public InputS{
-    public:
-	MP3InputS();
-	~MP3InputS();
-	
-	bool open(std::string filename);
-	void close();
+class MP3InputS : public InputS {
+public:
+    MP3InputS();
+    ~MP3InputS();
 
-	int read(int nsmps,short int *smps);
-	void seek(double pos);//0=start,1.0=end
-	
-    private:
-	void convertsmps(int nsmps, short int *smps,int pcmstart);
-	short int madpcm2short(mad_fixed_t x);
-	int pcm_remained;
-    
-	bool MP3_opened;
-	struct mad_stream stream;
-	struct mad_frame frame;
-	struct mad_synth synth;
-	FILE *f;
-	unsigned char *buf;
-    
+    bool open(std::string filename);
+    void close();
+
+    int  read(int nsmps, short int* smps);
+    void seek(double pos); //0=start,1.0=end
+
+private:
+    void      convertsmps(int nsmps, short int* smps, int pcmstart);
+    short int madpcm2short(mad_fixed_t x);
+    int       pcm_remained;
+
+    bool              MP3_opened;
+    struct mad_stream stream;
+    struct mad_frame  frame;
+    struct mad_synth  synth;
+    FILE*             f;
+    unsigned char*    buf;
 };
 #endif

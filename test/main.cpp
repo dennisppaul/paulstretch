@@ -14,15 +14,15 @@ string render_file(string inaudio, string outaudio) {
     InputS* ai = new MP3InputS;
     if (!ai->open(inaudio)) {
         return "Error: Could not open audio file (or file format not "
-            "recognized): " +
-            inaudio;
+               "recognized): " +
+               inaudio;
     }
 
     // 32bit PCM, little-endian, mono, 44100 Hz
     std::ofstream outfile(outaudio, std::ios::binary | std::ios::out);
 
-    int mBufferSize = 44100 * 0.25;
-    short int* mReadBuffer = new short int[mBufferSize * 8];
+    int         mBufferSize = 44100 * 0.25;
+    short int*  mReadBuffer = new short int[mBufferSize * 8];
     PaulStretch stretch(8, mBufferSize, 44100);
 
     while (!ai->eof) {
@@ -43,10 +43,10 @@ string render_file(string inaudio, string outaudio) {
         for (int i = 0; i < mNumReadSamples; i++) {
             stretch.get_input_buffer()[i] = mReadBuffer[i * 2] / 32768.0;
         }
-        const int mBufferSize = stretch.get_output_buffer_size();
-        float* mSamples = new float[mBufferSize];
-        int mNumOfTotalSamples = 0;
-        bool mHasMoreSamples = true;
+        const int mBufferSize        = stretch.get_output_buffer_size();
+        float*    mSamples           = new float[mBufferSize];
+        int       mNumOfTotalSamples = 0;
+        bool      mHasMoreSamples    = true;
         while (mHasMoreSamples) {
             // 3. process input buffer
             mHasMoreSamples = stretch.process_segment(mSamples);
@@ -54,8 +54,12 @@ string render_file(string inaudio, string outaudio) {
             int* outbuf = new int[mBufferSize];
             for (int i = 0; i < mBufferSize; i++) {
                 float l = mSamples[i];
-                if (l < -1.0) { l = -1.0; } else if (l > 1.0) { l = 1.0; }
-                outbuf[i] = (int)(l * 32767.0 * 65536.0);
+                if (l < -1.0) {
+                    l = -1.0;
+                } else if (l > 1.0) {
+                    l = 1.0;
+                }
+                outbuf[i] = (int) (l * 32767.0 * 65536.0);
             };
             outfile.write(reinterpret_cast<char*>(outbuf), mBufferSize * sizeof(int));
             delete[] outbuf;
@@ -67,7 +71,7 @@ string render_file(string inaudio, string outaudio) {
 #ifdef USE_FILL_BUFFER
         float* mInputBuffer = new float[mNumReadSamples];
         for (int i = 0; i < mNumReadSamples; i++) {
-            mInputBuffer[i] = mReadBuffer[i * 2] / 32768.0;
+            mInputBuffer[i]               = mReadBuffer[i * 2] / 32768.0;
             stretch.get_input_buffer()[i] = mReadBuffer[i * 2] / 32768.0;
         }
         stretch.fill_input_buffer(mInputBuffer, mNumRequestedSamples);
@@ -89,7 +93,7 @@ string render_file(string inaudio, string outaudio) {
                 l = -1.0;
             else if (l > 1.0)
                 l = 1.0;
-            outbuf[i] = (int)(l * 32767.0 * 65536.0);
+            outbuf[i] = (int) (l * 32767.0 * 65536.0);
         };
         outfile.write(reinterpret_cast<char*>(outbuf), mSamples.size() * sizeof(int));
         delete[] outbuf;
@@ -101,7 +105,8 @@ string render_file(string inaudio, string outaudio) {
 }
 
 int main(int argc, char** argv) {
-    cout << "+++ paulstretch" << endl << endl;
+    cout << "+++ paulstretch" << endl
+         << endl;
     if (argc == 3) {
         cout << render_file(argv[1], argv[2]) << endl;
     }

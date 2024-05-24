@@ -23,13 +23,10 @@
 #include <unistd.h>
 #endif
 
-void sleep(int ms){
+void sleep(int ms) {
 #ifdef WINDOWS
     Sleep(1000);
 #else
-    usleep(ms*1000);
+    usleep(ms * 1000);
 #endif
 };
-
-
-

@@ -8,16 +8,15 @@
 
 class PaulStretch {
 public:
-    PaulStretch(int stretch_value, int buffer_size, int samplerate) :
-        pInputBufferSize(buffer_size),
-        pStretch(stretch_value),
-        pSampleRate(samplerate) {
-        stretch = new ProcessedStretch(stretch_value,
-            buffer_size,
-            FFT::_W_HANN,
-            false,
-            samplerate);
-        pOutputBufferSize = stretch->get_bufsize();
+    PaulStretch(int stretch_value, int buffer_size, int samplerate) : pInputBufferSize(buffer_size),
+                                                                      pStretch(stretch_value),
+                                                                      pSampleRate(samplerate) {
+        stretch             = new ProcessedStretch(stretch_value,
+                                                   buffer_size,
+                                                   FFT::_W_HANN,
+                                                   false,
+                                                   samplerate);
+        pOutputBufferSize   = stretch->get_bufsize();
         const int mPoolSize = stretch->get_max_bufsize();
 
         pInputBuffer = new float[mPoolSize];
@@ -70,10 +69,10 @@ public:
 
 private:
     ProcessedStretch* stretch;
-    int pInputBufferSize;
-    int pOutputBufferSize;
-    int pStretch;
-    int pSampleRate;
-    float* pInputBuffer;
-    int pRequiredSamples;
+    int               pInputBufferSize;
+    int               pOutputBufferSize;
+    int               pStretch;
+    int               pSampleRate;
+    float*            pInputBuffer;
+    int               pRequiredSamples;
 };
