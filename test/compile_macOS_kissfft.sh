@@ -4,15 +4,17 @@ rm -f $outfile
 # Compile C source files with gcc
 gcc -c \
 -I./contrib \
-contrib/*.c
+../contrib/*.c
 
 # Compile C++ source files with g++
 g++ -std=c++14 -DKISSFFT \
 -c \
 -I/opt/homebrew/include \
--I./contrib \
+-I../contrib \
 -I./input \
+-I../include \
 ./input/*.cpp \
+../src/*.cpp \
 *.cpp
 
 # Link all object files together with g++
