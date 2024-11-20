@@ -12,18 +12,18 @@ include_directories(include contrib)
 
 # Add the source files
 set(SOURCES
-    src/ProcessedStretch.cpp
-    contrib/kiss_fft.c
-    contrib/kiss_fftr.c
+        src/ProcessedStretch.cpp
+        contrib/kiss_fft.c
+        contrib/kiss_fftr.c
 )
 
 # header files
 set(HEADERS
-    include/PaulStretch.h
-    include/ProcessedStretch.h
-    contrib/kiss_fft.h
-    contrib/kiss_fftr.h
-    contrib/_kiss_fft_guts.h
+        include/PaulStretch.h
+        include/ProcessedStretch.h
+        contrib/kiss_fft.h
+        contrib/kiss_fftr.h
+        contrib/_kiss_fft_guts.h
 )
 
 # create library
